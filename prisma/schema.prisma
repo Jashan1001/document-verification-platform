@@ -14,25 +14,79 @@ enum Role {
   USER
 }
 
+enum DocumentStatus {
+  UPLOADED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
 model Institution {
   id        String   @id @default(uuid())
   name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users     User[]
+  users            User[]
+  documents        Document[]
+  verificationLogs VerificationLog[]
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
+  id            String       @id @default(uuid())
+  email         String       @unique
   password      String
   role          Role
   institutionId String?
   institution   Institution? @relation(fields: [institutionId], references: [id])
 
+  documents        Document[]        @relation("UserDocuments")
+  verificationLogs VerificationLog[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([institutionId])
+}
+
+model Document {
+  id             String         @id @default(uuid())
+  title          String
+  description    String?
+  fileUrl        String
+  fileHash       String
+  status         DocumentStatus @default(UPLOADED)
+  verificationId String         @unique
+  uploadedById   String
+  institutionId  String
+
+  uploadedBy  User              @relation("UserDocuments", fields: [uploadedById], references: [id])
+  institution Institution       @relation(fields: [institutionId], references: [id])
+  logs        VerificationLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([institutionId])
+  @@index([uploadedById])
+  @@index([status])
+}
+
+model VerificationLog {
+  id             String         @id @default(uuid())
+  documentId     String
+  actionById     String
+  previousStatus DocumentStatus
+  newStatus      DocumentStatus
+  remarks        String?
+  institutionId  String
+
+  document    Document    @relation(fields: [documentId], references: [id])
+  actionBy    User        @relation(fields: [actionById], references: [id])
+  institution Institution @relation(fields: [institutionId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([documentId])
   @@index([institutionId])
 }
