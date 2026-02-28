@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { createInstitutionWithAdmin } from "../services/institution.service";
-
+import { successResponse } from "../utils/response.util";
 export const createInstitutionController = async (
   req: Request,
   res: Response,
@@ -15,11 +15,11 @@ export const createInstitutionController = async (
       adminPassword
     );
 
-    res.status(201).json({
-      success: true,
-      institutionId: result.institution.id,
-      adminId: result.adminUser.id,
-    });
+      res.status(201).json({
+        success: true,
+        institutionId: result.institution.id,
+        adminId: result.adminUser.id,
+      });
   } catch (error) {
     next(error);
   }

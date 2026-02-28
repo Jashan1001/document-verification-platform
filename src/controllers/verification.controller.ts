@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyDocumentService } from "../services/verification.service";
+import { successResponse } from "../utils/response.util";
+
 
 export const verifyDocumentController = async (
   req: Request,
@@ -15,10 +17,7 @@ export const verifyDocumentController = async (
 
     const result = await verifyDocumentService(verificationId);
 
-    res.json({
-      success: true,
-      data: result,
-    });
+    res.json(successResponse(result));
   } catch (error) {
     next(error);
   }

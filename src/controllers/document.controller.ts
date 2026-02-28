@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { uploadDocumentService } from "../services/document.service";
 import { DocumentStatus } from "@prisma/client";
 import { updateDocumentStatusService } from "../services/document.service";
-
+import { successResponse } from "../utils/response.util";
 
 
 export const updateDocumentStatusController = async (
@@ -26,10 +26,12 @@ export const updateDocumentStatusController = async (
       req.user!
     );
 
-    res.json({
-      success: true,
-      newStatus: updatedDocument.status,
-    });
+    res.json(
+  successResponse(
+    { status: updatedDocument.status },
+    "Document status updated"
+  )
+);
   } catch (error) {
     next(error);
   }
@@ -49,11 +51,15 @@ export const uploadDocumentController = async (
       req.user!
     );
 
-    res.status(201).json({
-      success: true,
-      documentId: document.id,
-      verificationId: document.verificationId,
-    });
+    res.status(201).json(
+      successResponse(
+        {
+          documentId: document.id,
+          verificationId: document.verificationId,
+        },
+        "Document uploaded successfully"
+      )
+    );
   } catch (error) {
     next(error);
   }

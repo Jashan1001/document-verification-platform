@@ -9,6 +9,8 @@ import institutionRoutes from "./routes/institution.routes";
 import documentRoutes from "./routes/document.routes";
 import { Request, Response, NextFunction } from "express";
 import verificationRoutes from "./routes/verification.routes";
+import { errorResponse } from "./utils/response.util";
+
 const app = express();
 
 app.use(helmet());
@@ -51,15 +53,13 @@ app.use((req, res) => {
 // 🔥 ERROR HANDLER MUST BE LAST
 app.use(
   (err: any, req: Request, res: Response, next: NextFunction) => {
-    console.error("Error middleware caught:", err);
+    console.error("Error:", err);
 
     const statusCode = err.status || 500;
 
-    res.status(statusCode).json({
-      success: false,
-      message: err.message || "Internal Server Error",
-    });
+    res.status(statusCode).json(
+      errorResponse(err.message || "Internal Server Error")
+    );
   }
 );
-
 export default app;
