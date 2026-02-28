@@ -17,3 +17,11 @@ export const createDocument = async (data: {
     },
   });
 };
+export const findByVerificationId = async (verificationId: string) => {
+  return prisma.document.findUnique({
+    where: { verificationId },
+    include: {
+      institution: true,
+    },
+  });
+};
