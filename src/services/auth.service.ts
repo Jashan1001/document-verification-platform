@@ -25,6 +25,9 @@ export const registerUser = async (
 };
 
 export const loginUser = async (email: string, password: string) => {
+  if (!email || !password) {
+    throw { status: 400, message: "Email and password are required" };
+  }
   const user = await findUserByEmail(email);
   if (!user) {
     throw { status: 401, message: "Invalid credentials" };
