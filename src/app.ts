@@ -12,7 +12,7 @@ import verificationRoutes from "./routes/verification.routes";
 import { errorResponse } from "./utils/response.util";
 
 const app = express();
-
+app.set("trust proxy", 1);
 app.use(helmet());
 app.use(cors());
 app.use(express.json());

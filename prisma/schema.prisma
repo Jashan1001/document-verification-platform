@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//////////////////////////////////////
+// ENUMS
+//////////////////////////////////////
+
 enum Role {
   SUPER_ADMIN
   INSTITUTION_ADMIN
@@ -21,65 +25,98 @@ enum DocumentStatus {
   REJECTED
 }
 
+//////////////////////////////////////
+// MODELS
+//////////////////////////////////////
+
 model Institution {
   id        String   @id @default(uuid())
   name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   users            User[]
   documents        Document[]
   verificationLogs VerificationLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([deletedAt])
 }
+
+//////////////////////////////////////
 
 model User {
   id            String       @id @default(uuid())
   email         String       @unique
   password      String
   role          Role
+
   institutionId String?
   institution   Institution? @relation(fields: [institutionId], references: [id])
 
-  documents        Document[]        @relation("UserDocuments")
-  verificationLogs VerificationLog[]
+  documents         Document[]        @relation("UserDocuments")
+  reviewedDocuments Document[]        @relation("ReviewedDocuments")
+  verificationLogs  VerificationLog[]
+  refreshTokens     RefreshToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   @@index([institutionId])
+  @@index([role])
+  @@index([deletedAt])
 }
 
-model Document {
-  id             String         @id @default(uuid())
-  title          String
-  description    String?
-  fileUrl        String
-  fileHash       String
-  status         DocumentStatus @default(UPLOADED)
-  verificationId String         @unique
-  uploadedById   String
-  institutionId  String
+//////////////////////////////////////
 
-  uploadedBy  User              @relation("UserDocuments", fields: [uploadedById], references: [id])
-  institution Institution       @relation(fields: [institutionId], references: [id])
-  logs        VerificationLog[]
+model Document {
+  id          String         @id @default(uuid())
+  title       String
+  description String?
+
+  fileUrl  String
+  fileHash String
+
+  status DocumentStatus @default(UPLOADED)
+
+  verificationId String @unique
+
+  uploadedById  String
+  institutionId String
+
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  uploadedBy  User        @relation("UserDocuments", fields: [uploadedById], references: [id])
+  institution Institution @relation(fields: [institutionId], references: [id])
+  reviewedBy  User?       @relation("ReviewedDocuments", fields: [reviewedById], references: [id])
+
+  logs VerificationLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   @@index([institutionId])
   @@index([uploadedById])
   @@index([status])
+  @@index([reviewedById])
+  @@index([deletedAt])
 }
+//////////////////////////////////////
 
 model VerificationLog {
   id             String         @id @default(uuid())
   documentId     String
   actionById     String
+  institutionId  String
+
   previousStatus DocumentStatus
   newStatus      DocumentStatus
-  remarks        String?
-  institutionId  String
+
+  remarks String?
 
   document    Document    @relation(fields: [documentId], references: [id])
   actionBy    User        @relation(fields: [actionById], references: [id])
@@ -89,4 +126,21 @@ model VerificationLog {
 
   @@index([documentId])
   @@index([institutionId])
+  @@index([actionById])
+}
+
+//////////////////////////////////////
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }

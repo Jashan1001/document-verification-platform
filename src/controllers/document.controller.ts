@@ -3,7 +3,11 @@ import { uploadDocumentService } from "../services/document.service";
 import { DocumentStatus } from "@prisma/client";
 import { updateDocumentStatusService } from "../services/document.service";
 import { successResponse } from "../utils/response.util";
-
+import {
+  getDocumentsService,
+  getDocumentByIdService,
+  getDocumentByVerificationIdService,
+} from "../services/document.service";
 
 export const updateDocumentStatusController = async (
   req: Request,
@@ -60,6 +64,64 @@ export const uploadDocumentController = async (
         "Document uploaded successfully"
       )
     );
+  } catch (error) {
+    next(error);
+  }
+};
+export const getDocumentsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const documents = await getDocumentsService(req.user!);
+
+    res.json(successResponse(documents, "Documents fetched"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDocumentByIdController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const documentId = req.params.documentId;
+
+    if (!documentId || Array.isArray(documentId)) {
+      throw { status: 400, message: "Invalid documentId parameter" };
+    }
+
+    const document = await getDocumentByIdService(
+      documentId,
+      req.user!
+    );
+
+    res.json(successResponse(document, "Document fetched"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyPublicController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const verificationId = req.params.verificationId;
+
+    if (!verificationId || Array.isArray(verificationId)) {
+      throw { status: 400, message: "Invalid verificationId parameter" };
+    }
+
+    const data = await getDocumentByVerificationIdService(
+      verificationId
+    );
+
+    res.json(successResponse(data, "Verification successful"));
   } catch (error) {
     next(error);
   }

@@ -27,15 +27,17 @@ export const updateDocumentStatusService = async (
   }
 
   return prisma.$transaction(async (tx) => {
-    const document = await tx.document.findUnique({
-      where: { id: documentId },
+    const document = await tx.document.findFirst({
+      where: {
+        id: documentId,
+        deletedAt: null,
+      },
     });
 
     if (!document) {
       throw { status: 404, message: "Document not found" };
     }
 
-    // Multi-tenant isolation
     if (document.institutionId !== user.institutionId) {
       throw { status: 403, message: "Access denied for this institution" };
     }
@@ -49,9 +51,22 @@ export const updateDocumentStatusService = async (
       };
     }
 
+    const updateData: any = {
+      status: newStatus,
+    };
+
+    // Set reviewer metadata only if approved/rejected
+    if (
+      newStatus === DocumentStatus.APPROVED ||
+      newStatus === DocumentStatus.REJECTED
+    ) {
+      updateData.reviewedById = user.userId;
+      updateData.reviewedAt = new Date();
+    }
+
     const updatedDocument = await tx.document.update({
       where: { id: documentId },
-      data: { status: newStatus },
+      data: updateData,
     });
 
     await tx.verificationLog.create({
@@ -104,4 +119,85 @@ export const uploadDocumentService = async (
   
 
   return document;
+};
+export const getDocumentsService = async (user: {
+  userId: string;
+  role: string;
+  institutionId?: string | null;
+}) => {
+  if (!user.institutionId) {
+    throw { status: 403, message: "Invalid tenant context" };
+  }
+
+  return prisma.document.findMany({
+    where: {
+      institutionId: user.institutionId,
+      deletedAt: null,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
+
+export const getDocumentByIdService = async (
+  documentId: string,
+  user: {
+    userId: string;
+    role: string;
+    institutionId?: string | null;
+  }
+) => {
+  if (!user.institutionId) {
+    throw { status: 403, message: "Invalid tenant context" };
+  }
+
+  const document = await prisma.document.findFirst({
+    where: {
+      id: documentId,
+      institutionId: user.institutionId,
+      deletedAt: null,
+    },
+    include: {
+      uploadedBy: {
+        select: { id: true, email: true },
+      },
+      logs: true,
+    },
+  });
+
+  if (!document) {
+    throw { status: 404, message: "Document not found" };
+  }
+
+  return document;
+};
+
+export const getDocumentByVerificationIdService = async (
+  verificationId: string
+) => {
+  const document = await prisma.document.findUnique({
+    where: { verificationId },
+    include: {
+      institution: {
+        select: { id: true, name: true },
+      },
+    },
+  });
+
+  if (!document) {
+    throw { status: 404, message: "Verification ID not found" };
+  }
+
+  if (document.status !== DocumentStatus.APPROVED) {
+    throw { status: 400, message: "Document not verified yet" };
+  }
+
+  return {
+    title: document.title,
+    verificationId: document.verificationId,
+    institution: document.institution.name,
+    status: document.status,
+    reviewedAt: document.reviewedAt,
+  };
 };
