@@ -10,6 +10,8 @@ import documentRoutes from "./routes/document.routes";
 import { Request, Response, NextFunction } from "express";
 import verificationRoutes from "./routes/verification.routes";
 import { errorResponse } from "./utils/response.util";
+import dashboardRoutes from "./routes/dashboard.routes";
+
 
 const app = express();
 app.set("trust proxy", 1);
@@ -21,7 +23,7 @@ app.use("/auth", authRoutes);
 app.use("/institutions", institutionRoutes);
 app.use("/documents", documentRoutes);
 app.use("/verify", verificationRoutes);
-
+app.use("/dashboard", dashboardRoutes);
 app.get(
   "/admin-only",
   authenticate,
