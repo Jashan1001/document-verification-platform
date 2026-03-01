@@ -1,3 +1,4 @@
+/// DEBUG_MARKER_XYZ
 generator client {
   provider = "prisma-client-js"
 }
@@ -52,7 +53,6 @@ model User {
   password String
   role     Role
 
-  // 🔐 Account Locking & Security Fields
   failedAttempts Int      @default(0)
   lockUntil      DateTime?
   lastLoginAt    DateTime?
@@ -64,6 +64,7 @@ model User {
   reviewedDocuments Document[]        @relation("ReviewedDocuments")
   verificationLogs  VerificationLog[]
   refreshTokens     RefreshToken[]
+  loginAttempts     LoginAttempt[]   // 👈 ADD THIS LINE
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -73,7 +74,6 @@ model User {
   @@index([role])
   @@index([deletedAt])
 }
-
 //////////////////////////////////////
 
 model Document {
@@ -149,4 +149,23 @@ model RefreshToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+//////////////////////////////////////
+
+model LoginAttempt {
+  id        String   @id @default(uuid())
+
+  email     String
+  userId    String?
+  ipAddress String
+  success   Boolean
+  reason    String?
+
+  user User? @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([userId])
+  @@index([createdAt])
 }

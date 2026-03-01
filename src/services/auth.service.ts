@@ -55,10 +55,53 @@ export const loginUser = async (email: string, password: string) => {
     throw { status: 401, message: "Invalid credentials" };
   }
 
+  // 🔒 Check if account is locked
+  if (user.lockUntil && user.lockUntil > new Date()) {
+    throw {
+      status: 403,
+      message: "Account is temporarily locked. Please try again later.",
+    };
+  }
+
   const isMatch = await bcrypt.compare(password, user.password);
+
   if (!isMatch) {
+    const updatedAttempts = user.failedAttempts + 1;
+
+    // If 5 failed attempts → lock account for 10 minutes
+    if (updatedAttempts >= 5) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedAttempts: updatedAttempts,
+          lockUntil: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        },
+      });
+
+      throw {
+        status: 403,
+        message:
+          "Too many failed attempts. Account locked for 10 minutes.",
+      };
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedAttempts: updatedAttempts },
+    });
+
     throw { status: 401, message: "Invalid credentials" };
   }
+
+  // ✅ Password correct — reset failed attempts & unlock account
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      failedAttempts: 0,
+      lockUntil: null,
+      lastLoginAt: new Date(),
+    },
+  });
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken();
