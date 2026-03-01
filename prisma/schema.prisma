@@ -47,10 +47,15 @@ model Institution {
 //////////////////////////////////////
 
 model User {
-  id            String       @id @default(uuid())
-  email         String       @unique
-  password      String
-  role          Role
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+  role     Role
+
+  // 🔐 Account Locking & Security Fields
+  failedAttempts Int      @default(0)
+  lockUntil      DateTime?
+  lastLoginAt    DateTime?
 
   institutionId String?
   institution   Institution? @relation(fields: [institutionId], references: [id])
@@ -60,8 +65,8 @@ model User {
   verificationLogs  VerificationLog[]
   refreshTokens     RefreshToken[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@index([institutionId])
@@ -72,7 +77,7 @@ model User {
 //////////////////////////////////////
 
 model Document {
-  id          String         @id @default(uuid())
+  id          String @id @default(uuid())
   title       String
   description String?
 
@@ -105,13 +110,14 @@ model Document {
   @@index([reviewedById])
   @@index([deletedAt])
 }
+
 //////////////////////////////////////
 
 model VerificationLog {
-  id             String         @id @default(uuid())
-  documentId     String
-  actionById     String
-  institutionId  String
+  id            String @id @default(uuid())
+  documentId    String
+  actionById    String
+  institutionId String
 
   previousStatus DocumentStatus
   newStatus      DocumentStatus
