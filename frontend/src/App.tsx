@@ -1,9 +1,9 @@
-function App() {
+import AppLayout from "./components/layout/app-layout";
+
+export default function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white text-3xl font-bold">
-      Frontend Initialized Successfully 🚀
-    </div>
+    <AppLayout>
+      <div className="text-3xl font-bold">Welcome 🚀</div>
+    </AppLayout>
   );
 }
-
-export default App;
